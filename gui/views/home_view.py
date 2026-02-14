@@ -14,7 +14,7 @@ PADDING_PAGE = 20
 class HomeView(ft.Container):
     def __init__(self, page: ft.Page):
         super().__init__()
-        self.page = page
+        self._page = page
         self.expand = True
         self.padding = PADDING_PAGE
         
@@ -33,7 +33,7 @@ class HomeView(ft.Container):
                 vertical_alignment=ft.CrossAxisAlignment.CENTER
             ),
             bgcolor=self.palette.bg_light_blue,
-            padding=ft.padding.symmetric(vertical=8, horizontal=15),
+            padding=ft.Padding.symmetric(vertical=8, horizontal=15),
             border_radius=8,
             animate=ft.Animation(300, ft.AnimationCurve.EASE_OUT),
             on_click=self.toggle_app_status
@@ -44,7 +44,7 @@ class HomeView(ft.Container):
         self.stats_badge = ft.Container(
             content=ft.Text("0", size=12, color=self.palette.primary, weight=ft.FontWeight.BOLD),
             bgcolor=self.palette.bg_light_blue,
-            padding=ft.padding.symmetric(horizontal=8, vertical=2),
+            padding=ft.Padding.symmetric(horizontal=8, vertical=2),
             border_radius=10,
         )
         
@@ -77,7 +77,7 @@ class HomeView(ft.Container):
         self.running = False
 
     def update_theme(self):
-        self.palette = get_palette(self.page)
+        self.palette = get_palette(self._page)
         self.bgcolor = self.palette.bg_page
         
         # Update static elements
@@ -86,8 +86,11 @@ class HomeView(ft.Container):
         self.stats_badge.content.color = self.palette.primary
         
         # Rebuild UI or refresh data to update list items
-        self.refresh_data()
-        self.update()
+        try:
+            self.refresh_data()
+            self.update()
+        except RuntimeError:
+            pass
 
     def build_ui(self):
         self.content = ft.Column(
@@ -118,7 +121,7 @@ class HomeView(ft.Container):
                                 alignment=ft.MainAxisAlignment.CENTER
                             ),
                             bgcolor=self.palette.primary,
-                            padding=ft.padding.symmetric(horizontal=16, vertical=8),
+                            padding=ft.Padding.symmetric(horizontal=16, vertical=8),
                             border_radius=8,
                             on_click=self.backup_current,
                             shadow=ft.BoxShadow(
@@ -167,7 +170,7 @@ class HomeView(ft.Container):
                         ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER
                     ),
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment.CENTER,
                     padding=40,
                     expand=True
                 )
@@ -206,7 +209,7 @@ class HomeView(ft.Container):
                                 height=40,
                                 border_radius=20,
                                 bgcolor=self.palette.primary if is_current else self.palette.text_grey,
-                                alignment=ft.alignment.center,
+                                alignment=ft.Alignment.CENTER,
                                 shadow=ft.BoxShadow(
                                     spread_radius=0,
                                     blur_radius=6,
@@ -222,7 +225,7 @@ class HomeView(ft.Container):
                                             ft.Container(
                                                 content=ft.Text("当前", size=10, color=self.palette.primary, weight=ft.FontWeight.BOLD),
                                                 bgcolor=self.palette.bg_light_blue,
-                                                padding=ft.padding.symmetric(horizontal=6, vertical=2),
+                                                padding=ft.Padding.symmetric(horizontal=6, vertical=2),
                                                 border_radius=4,
                                                 visible=is_current
                                             )
@@ -266,12 +269,12 @@ class HomeView(ft.Container):
                                 icon_color=self.palette.text_grey,
                                 items=[
                                     ft.PopupMenuItem(
-                                        text="切换到此账号", 
+                                        content="切换到此账号",
                                         icon=ft.Icons.SWAP_HORIZ,
                                         on_click=lambda e: self.switch_to_account(acc['id'])
                                     ),
                                     ft.PopupMenuItem(
-                                        text="删除备份", 
+                                        content="删除备份",
                                         icon=ft.Icons.DELETE_OUTLINE,
                                         on_click=lambda e: self.delete_acc(acc['id'])
                                     ),
@@ -285,7 +288,7 @@ class HomeView(ft.Container):
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER
             ),
-            padding=ft.padding.symmetric(horizontal=20, vertical=12),
+            padding=ft.Padding.symmetric(horizontal=20, vertical=12),
             bgcolor=self.palette.bg_card,
             border_radius=RADIUS_CARD,
             shadow=ft.BoxShadow(
@@ -316,13 +319,13 @@ class HomeView(ft.Container):
             
             if is_running:
                 self.status_bar.bgcolor = self.palette.bg_light_green
-                icon.name = AppIcons.check_circle
+                icon.icon = AppIcons.check_circle
                 icon.color = "#34C759"
                 text.value = "Antigravity 正在后台运行中"
                 text.color = "#34C759"
             else:
                 self.status_bar.bgcolor = self.palette.bg_light_red
-                icon.name = AppIcons.pause_circle
+                icon.icon = AppIcons.pause_circle
                 icon.color = "#FF3B30"
                 text.value = "Antigravity 服务已停止 (点击启动)"
                 text.color = "#FF3B30"
@@ -343,12 +346,12 @@ class HomeView(ft.Container):
             actions=[
                 ft.CupertinoDialogAction(
                     "确定", 
-                    is_destructive_action=is_error,
-                    on_click=lambda e: self.page.close(dlg)
+                    destructive=is_error,
+                    on_click=lambda e: self._page.pop_dialog()
                 )
             ]
         )
-        self.page.open(dlg)
+        self._page.show_dialog(dlg)
 
     def start_app(self, e):
         if start_antigravity():
@@ -382,7 +385,7 @@ class HomeView(ft.Container):
     def show_confirm_dialog(self, title, content, on_confirm, confirm_text="确定", is_destructive=False):
         def handle_confirm(e):
             on_confirm()
-            self.page.close(dlg)
+            self._page.pop_dialog()
             
         dlg = ft.CupertinoAlertDialog(
             title=ft.Text(title),
@@ -390,16 +393,16 @@ class HomeView(ft.Container):
             actions=[
                 ft.CupertinoDialogAction(
                     "取消", 
-                    on_click=lambda e: self.page.close(dlg)
+                    on_click=lambda e: self._page.pop_dialog()
                 ),
                 ft.CupertinoDialogAction(
                     confirm_text, 
-                    is_destructive_action=is_destructive,
+                    destructive=is_destructive,
                     on_click=handle_confirm
                 ),
             ]
         )
-        self.page.open(dlg)
+        self._page.show_dialog(dlg)
 
     def switch_to_account(self, account_id):
         def task():
@@ -431,7 +434,7 @@ class HomeView(ft.Container):
                 from utils import error
                 error(error_msg)
                 self.show_message(f"删除错误: {str(e)}", True)
-            self.page.update()
+            self._page.update()
 
         self.show_confirm_dialog(
             title="确认删除",

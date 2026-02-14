@@ -6,11 +6,11 @@ from pathlib import Path
 from datetime import datetime
 
 # -------------------------------------------------------------------------
-# 日志工具
+# Logging utilities
 # -------------------------------------------------------------------------
 
 def get_log_file_path():
-    """获取日志文件路径"""
+    """Get log file path"""
     try:
         log_dir = get_app_data_dir()
         return log_dir / "app.log"
@@ -18,7 +18,7 @@ def get_log_file_path():
         return None
 
 def _log_to_file(message):
-    """写入日志到文件"""
+    """Write log to file"""
     try:
         log_file = get_log_file_path()
         if log_file:
@@ -29,9 +29,9 @@ def _log_to_file(message):
         pass
 
 def _print_with_color(color_code, symbol, message):
-    """带颜色的打印函数，同时写入文件"""
+    """Print with color and write to file"""
     formatted_msg = f"{symbol} {message}"
-    # 在无控制台模式下，sys.stdout 可能为 None，直接打印会报错
+    # In no-console mode, sys.stdout may be None and printing would raise an error
     if sys.stdout:
         try:
             print(f"\033[{color_code}m{formatted_msg}\033[0m")
@@ -40,32 +40,32 @@ def _print_with_color(color_code, symbol, message):
     _log_to_file(formatted_msg)
 
 def info(message):
-    """打印信息日志 (绿色)"""
+    """Print info log (green)"""
     _print_with_color("32", "INFO", message)
 
 def warning(message):
-    """打印警告日志 (黄色)"""
+    """Print warning log (yellow)"""
     _print_with_color("33", "WARN", message)
 
 def error(message):
-    """打印错误日志 (红色)"""
+    """Print error log (red)"""
     _print_with_color("31", "ERR ", message)
 
 def debug(message):
-    """打印调试日志 (灰色)"""
-    # 只有在设置了DEBUG环境变量时才打印
+    """Print debug log (gray)"""
+    # Only print when DEBUG environment variable is set
     if os.environ.get("DEBUG"):
         _print_with_color("90", "DBUG", message)
     else:
-        # 在打包应用中，我们也希望记录调试信息到文件，方便排查
+        # In packaged apps, we also want to log debug info to file for troubleshooting
         _log_to_file(f"DBUG {message}")
 
 # -------------------------------------------------------------------------
-# 路径工具
+# Path utilities
 # -------------------------------------------------------------------------
 
 def get_app_data_dir():
-    """获取应用数据目录 (~/.antigravity-agent)"""
+    """Get application data directory (~/.antigravity-agent)"""
     home = Path.home()
     config_dir = home / ".antigravity-agent"
     if not config_dir.exists():
@@ -73,93 +73,93 @@ def get_app_data_dir():
     return config_dir
 
 def get_accounts_file_path():
-    """获取账号存储文件路径"""
+    """Get accounts storage file path"""
     return get_app_data_dir() / "antigravity_accounts.json"
 
 def get_antigravity_db_paths():
-    """获取 Antigravity 数据库可能的路径"""
+    """Get possible Antigravity database paths"""
     system = platform.system()
     paths = []
     home = Path.home()
 
     if system == "Darwin":  # macOS
-        # 标准路径: ~/Library/Application Support/Antigravity/User/globalStorage/state.vscdb
+        # Standard path: ~/Library/Application Support/Antigravity/User/globalStorage/state.vscdb
         paths.append(home / "Library/Application Support/Antigravity/User/globalStorage/state.vscdb")
-        # 备用路径 (旧版本可能的位置)
+        # Alternate path (older versions)
         paths.append(home / "Library/Application Support/Antigravity/state.vscdb")
     elif system == "Windows":
-        # 标准路径: %APPDATA%/Antigravity/state.vscdb
+        # Standard path: %APPDATA%/Antigravity/state.vscdb
         appdata = os.environ.get("APPDATA")
         if appdata:
             base_path = Path(appdata) / "Antigravity"
-            # 参考 cursor_reset.py 的路径结构
             paths.append(base_path / "User/globalStorage/state.vscdb")
             paths.append(base_path / "User/state.vscdb")
             paths.append(base_path / "state.vscdb")
     elif system == "Linux":
-        # 标准路径: ~/.config/Antigravity/state.vscdb
+        # Standard path: ~/.config/Antigravity/User/globalStorage/state.vscdb
+        paths.append(home / ".config/Antigravity/User/globalStorage/state.vscdb")
+        # Alternate path (older versions)
         paths.append(home / ".config/Antigravity/state.vscdb")
-    
+
     return paths
 
 def get_antigravity_executable_path():
-    """获取 Antigravity 可执行文件路径"""
+    """Get Antigravity executable path"""
     system = platform.system()
-    
+
     if system == "Darwin":
         return Path("/Applications/Antigravity.app/Contents/MacOS/Antigravity")
     elif system == "Windows":
-        # 参考 cursor_reset.py 的查找逻辑
         local_app_data = Path(os.environ.get("LOCALAPPDATA", ""))
         program_files = Path(os.environ.get("ProgramFiles", "C:\\Program Files"))
         program_files_x86 = Path(os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"))
-        
+
         possible_paths = [
             local_app_data / "Programs/Antigravity/Antigravity.exe",
             program_files / "Antigravity/Antigravity.exe",
             program_files_x86 / "Antigravity/Antigravity.exe"
         ]
-        
+
         for path in possible_paths:
             if path.exists():
                 return path
-                
+
         # Fallback to default if nothing found (though likely won't exist)
         return local_app_data / "Programs/Antigravity/Antigravity.exe"
-        
+
     elif system == "Linux":
         return Path("/usr/share/antigravity/antigravity")
-    
+
     return None
 
 def open_uri(uri):
-    """跨平台打开 URI 协议
-    
+    """Open URI protocol cross-platform
+
     Args:
-        uri: 要打开的 URI，例如 "antigravity://oauth-success"
-        
+        uri: The URI to open, e.g. "antigravity://oauth-success"
+
     Returns:
-        bool: 是否成功启动
+        bool: Whether the launch was successful
     """
     import subprocess
     system = platform.system()
-    
+
     try:
         if system == "Darwin":
-            # macOS: 使用 open 命令
+            # macOS: Use open command
             subprocess.Popen(["open", uri])
         elif system == "Windows":
-            # Windows: 使用 start 命令
+            # Windows: Use start command
             # CREATE_NO_WINDOW = 0x08000000
             subprocess.Popen(["cmd", "/c", "start", "", uri], shell=False, creationflags=0x08000000)
         elif system == "Linux":
-            # Linux: 使用 xdg-open
+            # Linux: Use xdg-open
             subprocess.Popen(["xdg-open", uri])
         else:
-            error(f"不支持的操作系统: {system}")
+            error(f"Unsupported operating system: {system}")
             return False
-        
+
         return True
     except Exception as e:
-        error(f"打开 URI 失败: {e}")
+        error(f"Failed to open URI: {e}")
         return False

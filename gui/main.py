@@ -13,7 +13,7 @@ class SidebarItem(ft.Container):
         super().__init__()
         self.on_click = on_click
         self.border_radius = 6
-        self.padding = ft.padding.symmetric(horizontal=10, vertical=8)
+        self.padding = ft.Padding.symmetric(horizontal=10, vertical=8)
         self.bgcolor = ft.Colors.with_opacity(0.1, palette.text_main) if selected else ft.Colors.TRANSPARENT
         self.animate = ft.Animation(200, ft.AnimationCurve.EASE_OUT)
         
@@ -38,11 +38,11 @@ class SidebarItem(ft.Container):
 class Sidebar(ft.Container):
     def __init__(self, page, on_nav_change):
         super().__init__()
-        self.page = page
+        self._page = page
         self.on_nav_change = on_nav_change
         self.selected_index = 0
         self.width = 200
-        self.padding = ft.padding.only(top=20, left=10, right=10)
+        self.padding = ft.Padding.only(top=20, left=10, right=10)
         
         self.items = [
             {"icon": AppIcons.dashboard, "label": "仪表盘"},
@@ -50,15 +50,15 @@ class Sidebar(ft.Container):
         ]
         
         # Initialize theme without calling update()
-        self.palette = get_palette(self.page)
+        self.palette = get_palette(self._page)
         self.bgcolor = self.palette.sidebar_bg
-        self.border = ft.border.only(right=ft.BorderSide(1, self.palette.sidebar_border))
+        self.border = ft.Border.only(right=ft.BorderSide(1, self.palette.sidebar_border))
         self.build_menu()
 
     def update_theme(self):
-        self.palette = get_palette(self.page)
+        self.palette = get_palette(self._page)
         self.bgcolor = self.palette.sidebar_bg
-        self.border = ft.border.only(right=ft.BorderSide(1, self.palette.sidebar_border))
+        self.border = ft.Border.only(right=ft.BorderSide(1, self.palette.sidebar_border))
         self.build_menu()
         self.update()
 
@@ -79,7 +79,7 @@ class Sidebar(ft.Container):
             [
                 ft.Container(
                     content=ft.Text("Antigravity", size=12, weight=ft.FontWeight.BOLD, color=self.palette.text_grey),
-                    padding=ft.padding.only(left=10, bottom=10)
+                    padding=ft.Padding.only(left=10, bottom=10)
                 ),
                 ft.Column(menu_items, spacing=2)
             ]
@@ -104,16 +104,16 @@ def main(page: ft.Page):
 
     page.title = "Antigravity Manager"
     page.theme_mode = ft.ThemeMode.SYSTEM
-    
+
     # Window settings optimization
-    page.window_width = 1000
-    page.window_height = 700
-    page.window_min_width = 800
-    page.window_min_height = 600
-    page.window_resizable = True
+    page.window.width = 1000
+    page.window.height = 700
+    page.window.min_width = 800
+    page.window.min_height = 600
+    page.window.resizable = True
     page.padding = 0
-    
-    # Set window icon (must use .ico format on Windows and page.window.icon property)
+
+    # Set window icon (must use .ico format on Windows)
     page.window.icon = "icon.ico"
     
     # Note: Window icons cannot be changed at runtime in Flet on macOS
@@ -186,7 +186,7 @@ if __name__ == "__main__":
         assets_path = str(Path(__file__).parent.parent / "assets")
         
     try:
-        ft.app(target=main, assets_dir=assets_path)
+        ft.run(main, assets_dir=assets_path)
     except Exception as e:
         import traceback
         print("CRITICAL ERROR: Application crashed!")

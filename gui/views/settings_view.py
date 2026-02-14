@@ -12,7 +12,7 @@ PADDING_PAGE = 20
 class SettingsView(ft.Container):
     def __init__(self, page: ft.Page):
         super().__init__()
-        self.page = page
+        self._page = page
         self.expand = True
         self.padding = PADDING_PAGE
         
@@ -41,10 +41,13 @@ class SettingsView(ft.Container):
         pass
 
     def update_theme(self):
-        self.palette = get_palette(self.page)
+        self.palette = get_palette(self._page)
         self.bgcolor = self.palette.bg_page
         self.build_ui() # Rebuild UI to update colors
-        self.update()
+        try:
+            self.update()
+        except RuntimeError:
+            pass
 
     def build_ui(self):
         self.content = ft.Column(
@@ -86,11 +89,11 @@ class SettingsView(ft.Container):
                                                 ft.Container(height=20),
                                                 ft.Container(
                                                     content=ft.Text("打开文件夹", size=13, color=self.palette.primary, weight=ft.FontWeight.BOLD),
-                                                    padding=ft.padding.symmetric(horizontal=20, vertical=10),
+                                                    padding=ft.Padding.symmetric(horizontal=20, vertical=10),
                                                     border_radius=8,
                                                     bgcolor=self.palette.bg_light_blue,
                                                     on_click=self.open_data_folder,
-                                                    alignment=ft.alignment.center
+                                                    alignment=ft.Alignment.CENTER
                                                 ),
                                             ],
                                             spacing=0,
